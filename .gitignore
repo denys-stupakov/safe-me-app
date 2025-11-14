@@ -1,0 +1,47 @@
+# Node / React Native
+node_modules/
+.expo/
+.expo-shared/
+*.expo.js
+npm-debug.*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Android
+mobile/android/gradlew
+mobile/android/gradlew.bat
+mobile/android/local.properties
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/.gradle/
+
+# iOS
+mobile/ios/Pods/
+mobile/ios/build/
+mobile/ios/*.xcworkspace
+mobile/ios/*.xcodeproj/xcuserdata/
+mobile/ios/DerivedData/
+
+# Expo / React Native
+.expo/
+.expo-shared/
+web-build/
+dist/
+
+# Python / FastAPI
+backend/__pycache__/
+backend/.venv/
+backend/venv/
+backend/env/
+backend/.env
+backend/instance/
+backend/*.pyc
+backend/*.sqlite3
+
+# Misc
+.DS_Store
+.env
+.idea/
+.vscode/
+*.log
