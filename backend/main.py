@@ -1,23 +1,28 @@
-# backend/src/main.py
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# ---- IMPORT FROM SAME PACKAGE ---------------------------------
-from .database.db import create_db_and_tables
-# ----------------------------------------------------------------
+# CORRECT IMPORT — no dots!
+from src.database.database import create_db_and_tables
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_db_and_tables()   # ← creates data/safe_me.db
+    print("Safe Me backend is starting up...")
+    create_db_and_tables()
+    print("SQLite database ready: safe_me.db created!")
+    print("API is now LIVE – your friend can call from React Native!")
     yield
-    # optional cleanup
+    print("Safe Me backend is shutting down...")
 
-# ---- CREATE APP ------------------------------------------------
-app = FastAPI(title="Safe Me API", lifespan=lifespan)
-# ----------------------------------------------------------------
 
-# ---- CORS (Expo Go) --------------------------------------------
+app = FastAPI(
+    title="Safe Me API",
+    description="Backend for Safe Me – Password Generator, Validator, Tips & Tests",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,14 +30,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# ----------------------------------------------------------------
 
-# ---- ROUTES ----------------------------------------------------
 @app.get("/")
 async def root():
-    return {"message": "Safe Me backend is ready with SQLite!"}
-
-@app.get("/api/hello")
-async def hello():
-    return {"greeting": "Hello from FastAPI!", "status": "success"}
-# ----------------------------------------------------------------
+    return {"message": "Safe Me API is running!"}

@@ -1,10 +1,13 @@
-from sqlmodel import create_engine, SQLModel, Session
+from sqlmodel import SQLModel, create_engine, Session
 from pathlib import Path
 
-DATABASE_PATH = Path(__file__).parent.parent.parent / "database" / "safe_me.db"
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+DB_PATH = BASE_DIR / "safe_me.db"
+DB_URL = f"sqlite:///{DB_PATH}"
 
-engine = create_engine(DATABASE_URL, echo=True)
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+engine = create_engine(DB_URL, echo=True, connect_args={"check_same_thread": False})
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)

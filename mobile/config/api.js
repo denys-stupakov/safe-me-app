@@ -4,7 +4,7 @@ const { apiUrl } = Constants.expoConfig.extra;
 
 const API = {
   BASE_URL: apiUrl,
-  HELLO: `${apiUrl}/api/hello`,
+  HELLO: apiUrl,
   // Add more later
 };
 

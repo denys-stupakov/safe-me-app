@@ -12,7 +12,7 @@ export default function ApiTestScreen() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(API.HELLO);
+      const response = await fetch(API.BASE_URL);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
       setData(json);
