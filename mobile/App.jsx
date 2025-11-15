@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet } from 'react-native';
 import BottomNav from './components/BottomNav';
+import { AuthProvider } from './auth/AuthContext';
 
 function HomeScreen() {
   return (
@@ -34,10 +35,12 @@ const styles = StyleSheet.create({
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <BottomNav HomeScreen={HomeScreen} />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <AuthProvider>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <BottomNav HomeScreen={HomeScreen} />
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </AuthProvider>
   );
 }
