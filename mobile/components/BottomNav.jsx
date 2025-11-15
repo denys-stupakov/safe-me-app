@@ -1,12 +1,11 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import TestScreen from '../screens/TestScreen';
 import TipsScreen from '../screens/TipsScreen';
-import ToolsScreen from '../screens/ToolsScreen';
+import ToolsStack from '../stacks/ToolsStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -75,7 +74,7 @@ export default function BottomNav({ HomeScreen }) {
       />
       <Tab.Screen
         name="Tools"
-        component={ToolsScreen}
+        component={ToolsStack}
         options={{
           tabBarLabel: 'Tools',
           tabBarIcon: ({ color }) => (
