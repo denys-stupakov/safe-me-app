@@ -45,3 +45,4 @@ backend/*.sqlite3
 .idea/
 .vscode/
 *.log
+mobile/app.json
