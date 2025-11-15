@@ -1,67 +1,106 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Keyboard } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Keyboard,
+  Clipboard, // ← NEW: for copying
+} from 'react-native';
+
+import API from "../config/api"
 
 export default function PasswordGenerator() {
   const [rawLength, setRawLength] = useState('16');
   const [length, setLength] = useState(16);
   const [excludeSpecial, setExcludeSpecial] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState(''); // ← NEW STATE
   const inputRef = useRef(null);
-  
+
   const dismissKeyboard = () => {
     Keyboard.dismiss();
     inputRef.current?.blur();
   };
-  
+
   const validateAndSetLength = () => {
     const min = excludeSpecial ? 17 : 16;
     let num = parseInt(rawLength);
-    
+
     if (isNaN(num) || rawLength.trim() === '') {
       Alert.alert('Invalid Input', 'Please enter a number.');
       setRawLength(length.toString());
       return;
     }
-    
+
     if (num < min) {
       Alert.alert('Too Short', `Password length must be at least ${min}.`);
       setRawLength(min.toString());
       setLength(min);
       return;
     }
-    
+
     if (num > 64) {
       Alert.alert('Too Long', 'Password length must not exceed 64.');
       setRawLength('64');
       setLength(64);
       return;
     }
-    
+
     setLength(num);
   };
-  
+
   const handleBlur = () => {
     dismissKeyboard();
     validateAndSetLength();
   };
-  
+
   const handleCheckboxToggle = () => {
-    const newExclude = !excludeSpecial;
-    setExcludeSpecial(newExclude);
-    if (newExclude && length < 17) {
-      setLength(17);
-      setRawLength('17');
-      Alert.alert('Adjusted', 'Minimum length increased to 17 when excluding special characters.');
+    setExcludeSpecial(prev => {
+      const newValue = !prev;
+      console.log('Checkbox toggled → exclude_special =', newValue);
+      if (newValue && length < 17) {
+        setLength(17);
+        setRawLength('17');
+      }
+      return newValue;
+    });
+  };
+
+  const handleGenerate = async () => {
+    try {
+      const response = await fetch(API.PASSWORD_GENERATE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          length: rawLength,
+          exclude_special: excludeSpecial,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Failed');
+
+      setGeneratedPassword(data.password);
+
+      console.log(data.password)
+    } catch (err) {
+      Alert.alert('Error', err.message);
     }
   };
-  
-  const handleGenerate = () => {
-    Alert.alert('Generate', `Length: ${length}, Exclude Special: ${excludeSpecial}`);
+
+  const copyToClipboard = () => {
+    if (generatedPassword) {
+      Clipboard.setString(generatedPassword);
+      Alert.alert('Copied!', 'Password copied to clipboard');
+    }
   };
-  
+
   return (
     <TouchableOpacity style={styles.container} activeOpacity={1} onPress={dismissKeyboard}>
       <Text style={styles.heading}>Password Generator</Text>
-      
+
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Password Length</Text>
         <TextInput
@@ -75,21 +114,39 @@ export default function PasswordGenerator() {
           placeholder="16"
         />
       </View>
-      
+
       <TouchableOpacity style={styles.checkboxRow} onPress={handleCheckboxToggle}>
         <View style={[styles.checkbox, excludeSpecial && styles.checkboxChecked]}>
           {excludeSpecial && <View style={styles.checkboxInner} />}
         </View>
         <Text style={styles.checkboxLabel}>Exclude special characters</Text>
       </TouchableOpacity>
-      
+
       <TouchableOpacity style={styles.button} onPress={handleGenerate}>
-        <Text style={styles.buttonText}>Generate</Text>
+        <Text style={styles.buttonText}>Generate Password</Text>
       </TouchableOpacity>
+
+      {/* ←←← NEW SECTION: PASSWORD DISPLAY + COPY BUTTON ←←← */}
+      {generatedPassword ? (
+        <View style={styles.resultContainer}>
+          <Text style={styles.resultLabel}>Your Secure Password</Text>
+          <View style={styles.passwordBox}>
+            <Text style={styles.passwordText} selectable>{generatedPassword}</Text>
+          </View>
+          <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard}>
+            <Text style={styles.copyButtonText}>Copy to Clipboard</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.placeholder}>
+          <Text style={styles.placeholderText}>Generate a password to see it here</Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
 
+// ←←← NEW STYLES ←←←
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -105,14 +162,8 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: '#000',
   },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: '#000',
-  },
+  inputGroup: { marginBottom: 20 },
+  label: { fontSize: 16, marginBottom: 8, color: '#000' },
   input: {
     backgroundColor: '#fff',
     paddingHorizontal: 16,
@@ -140,33 +191,70 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: '#007AFF',
-  },
-  checkboxInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-    backgroundColor: '#fff',
-  },
-  checkboxLabel: {
-    fontSize: 16,
-    color: '#000',
-  },
+  checkboxChecked: { backgroundColor: '#007AFF' },
+  checkboxInner: { width: 12, height: 12, borderRadius: 3, backgroundColor: '#fff' },
+  checkboxLabel: { fontSize: 16, color: '#000' },
   button: {
     backgroundColor: '#007AFF',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     elevation: 2,
+    marginBottom: 30,
+  },
+  buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+
+  // ← NEW STYLES
+  resultContainer: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 16,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
+  resultLabel: {
+    fontSize: 16,
     fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  passwordBox: {
+    backgroundColor: '#f0f8ff',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    marginBottom: 12,
+  },
+  passwordText: {
+    fontFamily: 'monospace',
+    fontSize: 18,
+    color: '#007AFF',
+    letterSpacing: 1,
+    textAlign: 'center',
+  },
+  copyButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  copyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  placeholder: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
   },
 });

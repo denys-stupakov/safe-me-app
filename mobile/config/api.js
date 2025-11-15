@@ -5,7 +5,7 @@ const { apiUrl } = Constants.expoConfig.extra;
 const API = {
   BASE_URL: apiUrl,
   HELLO: apiUrl,
-  // Add more later
+  PASSWORD_GENERATE: `${apiUrl}/password/generate`,
 };
 
 export default API;

@@ -2,9 +2,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# CORRECT IMPORT — no dots!
 from src.database.database import create_db_and_tables
 
+from src.routes.password import router as password_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,6 +30,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(password_router)
 
 @app.get("/")
 async def root():
