@@ -1,10 +1,9 @@
-// mobile/App.jsx
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet } from 'react-native';
 import BottomNav from './components/BottomNav';
 
-// Home Screen (inside App.jsx)
 function HomeScreen() {
   return (
     <View style={styles.container}>
@@ -35,8 +34,10 @@ const styles = StyleSheet.create({
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <BottomNav HomeScreen={HomeScreen} />
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <BottomNav HomeScreen={HomeScreen} />
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

@@ -1,8 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// Import other screens
 import TestScreen from '../screens/TestScreen';
 import TipsScreen from '../screens/TipsScreen';
 import ToolsScreen from '../screens/ToolsScreen';
@@ -10,6 +11,8 @@ import ToolsScreen from '../screens/ToolsScreen';
 const Tab = createBottomTabNavigator();
 
 export default function BottomNav({ HomeScreen }) {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
       screenOptions={{
@@ -19,12 +22,13 @@ export default function BottomNav({ HomeScreen }) {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          marginBottom: 4,
           marginTop: 2,
         },
         tabBarStyle: {
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          height: 90 + insets.bottom,
+          paddingBottom: 12 + insets.bottom,
+          paddingTop: 12,
           backgroundColor: '#fff',
           borderTopWidth: 1,
           borderTopColor: '#eee',
@@ -34,52 +38,48 @@ export default function BottomNav({ HomeScreen }) {
           shadowOpacity: 0.05,
           shadowRadius: 10,
         },
+        tabBarIconStyle: {
+          marginTop: 8,
+        },
       }}
     >
-      {/* Home */}
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
           tabBarLabel: 'Home',
           tabBarIcon: ({ color }) => (
-            <Icon name="home-outline" size={24} color={color} />
+            <Icon name="home-outline" size={26} color={color} />
           ),
         }}
       />
-      
-      {/* Test – Question mark */}
       <Tab.Screen
         name="Test"
         component={TestScreen}
         options={{
           tabBarLabel: 'Test',
           tabBarIcon: ({ color }) => (
-            <Icon name="help-circle-outline" size={24} color={color} />
+            <Icon name="help-circle-outline" size={26} color={color} />
           ),
         }}
       />
-      
-      {/* Tips */}
       <Tab.Screen
         name="Tips"
         component={TipsScreen}
         options={{
           tabBarLabel: 'Tips',
           tabBarIcon: ({ color }) => (
-            <Icon name="bulb-outline" size={24} color={color} />
+            <Icon name="bulb-outline" size={26} color={color} />
           ),
         }}
       />
-      
-      {/* Tools – Wrench / Construction icon */}
       <Tab.Screen
         name="Tools"
         component={ToolsScreen}
         options={{
           tabBarLabel: 'Tools',
           tabBarIcon: ({ color }) => (
-            <Icon name="construct-outline" size={24} color={color} />
+            <Icon name="construct-outline" size={26} color={color} />
           ),
         }}
       />
