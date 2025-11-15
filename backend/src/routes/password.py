@@ -25,7 +25,7 @@ class Password(BaseModel):
     exclude_special: bool
 
 @router.post("/generate")
-async def generate_password(
+def generate_password(
         password: Password,
         session: Session = Depends(get_session)
 ):
