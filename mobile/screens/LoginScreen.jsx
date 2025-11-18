@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Keyboard } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -8,55 +8,45 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const { login } = useAuth();
   const navigation = useNavigation();
-  const inputRef = useRef(null);
-  
-  const dismissKeyboard = () => {
-    Keyboard.dismiss();
-    inputRef.current?.blur();
-  };
   
   const validate = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address');
-      return false;
-    }
-    if (password.length < 16 || password.length > 64) {
-      Alert.alert('Invalid Password', 'Password must be between 16 and 64 characters');
-      return false;
-    }
-    return true;
+    if (!emailRegex.test(email)) return 'Invalid email';
+    if (password.length < 16 || password.length > 64) return 'Password must be 16–64 characters';
+    return null;
   };
   
-  const handleLogin = () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill all fields');
+  const handleLogin = async () => {
+    Keyboard.dismiss();
+    const error = validate();
+    if (error) {
+      Alert.alert('Error', error);
       return;
     }
-    if (!validate()) return;
-    login(email);
-    navigation.goBack();
+    
+    try {
+      const res = await fetch('http://10.0.2.2:8000/auth/login', {  // ← change if needed
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.detail || 'Login failed');
+      
+      await login({ email: data.email }, data.access_token);
+      navigation.goBack();
+    } catch (err) {
+      Alert.alert('Login Failed', err.message);
+    }
   };
   
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={1} onPress={dismissKeyboard}>
+    <TouchableOpacity style={styles.container} activeOpacity={1} onPress={Keyboard.dismiss}>
       <Text style={styles.heading}>Login</Text>
-      <TextInput
-        ref={inputRef}
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+      <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
