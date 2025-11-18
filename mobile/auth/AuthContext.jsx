@@ -1,5 +1,7 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// src/auth/AuthContext.jsx
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import API from '../config/api';
 
 const AuthContext = createContext();
 
@@ -7,43 +9,79 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
+  // Auto-login on app start
   useEffect(() => {
-    const loadAuth = async () => {
+    const bootstrapAsync = async () => {
+      let token;
       try {
-        const storedToken = await AsyncStorage.getItem('jwtToken');
-        const storedUser = await AsyncStorage.getItem('user');
-        if (storedToken && storedUser) {
-          setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+        token = await SecureStore.getItemAsync('access_token');
+        if (token) {
+          const res = await fetch(API.AUTH_ME, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const userData = await res.json();
+            setUser(userData);
+          } else {
+            await SecureStore.deleteItemAsync('access_token');
+          }
         }
       } catch (e) {
-        console.log('Auth load failed', e);
+        console.log('Auto-login failed', e);
       } finally {
         setLoading(false);
       }
     };
-    loadAuth();
+    bootstrapAsync();
   }, []);
-  
-  const login = async (userData, jwtToken) => {
-    await AsyncStorage.setItem('jwtToken', jwtToken);
-    await AsyncStorage.setItem('user', JSON.stringify(userData));
+
+  const login = async (email, password) => {
+    const formBody = new URLSearchParams();
+    formBody.append('username', email);
+    formBody.append('password', password);
+
+    const res = await fetch(API.AUTH_LOGIN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formBody.toString(),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Login failed');
+
+    await SecureStore.setItemAsync('access_token', data.access_token);
+    const userRes = await fetch(API.AUTH_ME, {
+      headers: { Authorization: `Bearer ${data.access_token}` }
+    });
+    const userData = await userRes.json();
     setUser(userData);
-    setToken(jwtToken);
   };
-  
+
+  const register = async (email, password) => {
+    const res = await fetch(API.AUTH_REGISTER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Registration failed');
+    }
+
+    // Auto-login after register
+    await login(email, password);
+  };
+
   const logout = async () => {
-    await AsyncStorage.removeItem('jwtToken');
-    await AsyncStorage.removeItem('user');
+    await SecureStore.deleteItemAsync('access_token');
     setUser(null);
-    setToken(null);
   };
-  
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
