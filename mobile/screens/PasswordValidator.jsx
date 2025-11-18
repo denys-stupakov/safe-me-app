@@ -1,106 +1,125 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Keyboard } from 'react-native';
+import API from '../config/api'; // ← your API constants
 
 export default function PasswordValidator() {
   const [password, setPassword] = useState('');
-  const inputRef = useRef(null);
-  
-  const dismissKeyboard = () => {
-    Keyboard.dismiss();
-    inputRef.current?.blur();
-  };
-  
-  const handleBlur = () => {
-    dismissKeyboard();
-    if (password.length > 64) {
-      Alert.alert('Too Long', 'Password must not exceed 64 characters. It has been truncated.');
-      setPassword(password.slice(0, 64));
-    }
-  };
-  
-  const handleSubmit = () => {
-    if (password.length === 0) {
-      Alert.alert('Empty', 'Please enter a password to validate.');
+  const [result, setResult] = useState(null);
+
+  const handleSubmit = async () => {
+    if (!password) {
+      Alert.alert('Empty', 'Please enter a password');
       return;
     }
-    Alert.alert('Validate', `Sending password of length ${password.length} to FastAPI...`);
+
+    try {
+      const res = await fetch(API.VALIDATOR_VALIDATE || 'http://192.168.137.1:8000/validator/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed');
+
+      setResult(data);
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    }
   };
-  
+
+  const getStrengthColor = () => {
+    if (!result) return '#ccc';
+    switch (result.color) {
+      case 'Red': return '#ef4444';
+      case 'Orange': return '#f97316';
+      case 'Yellow': return '#eab308';
+      case 'Green': return '#22c55e';
+      case 'Dark Green': return '#16a34a';
+      default: return '#6b7280';
+    }
+  };
+
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={1} onPress={dismissKeyboard}>
+    <View style={styles.container}>
       <Text style={styles.heading}>Password Validator</Text>
-      
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Enter Password</Text>
-        <TextInput
-          ref={inputRef}
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          onBlur={handleBlur}
-          placeholder="Type or paste password"
-          secureTextEntry={false}
-          maxLength={100}
-          multiline={false}
-        />
-      </View>
-      
+
+      <TextInput
+        style={styles.input}
+        value={password}
+        onChangeText={setPassword}
+        placeholder="Enter password to check strength"
+        secureTextEntry={false}
+        autoCapitalize="none"
+      />
+
       <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Validate</Text>
+        <Text style={styles.buttonText}>Analyze Password</Text>
       </TouchableOpacity>
-    </TouchableOpacity>
+
+      {result && (
+        <View style={styles.resultCard}>
+          <Text style={styles.strengthText}>Strength: <Text style={[styles.strengthValue, { color: getStrengthColor() }]}>{result.strength}</Text></Text>
+
+          <View style={styles.metrics}>
+            <Text style={styles.metric}>Length: {result.length}</Text>
+            <Text style={styles.metric}>Entropy: {result.entropy} bits</Text>
+          </View>
+
+          <View style={styles.checks}>
+            <Text style={result.has_lowercase ? styles.good : styles.bad}>Lowercase</Text>
+            <Text style={result.has_uppercase ? styles.good : styles.bad}>Uppercase</Text>
+            <Text style={result.has_digits ? styles.good : styles.bad}>Numbers</Text>
+            <Text style={result.has_special ? styles.good : styles.bad}>Special chars</Text>
+          </View>
+
+          {result.warnings.length > 0 && (
+            <View style={styles.warnings}>
+              <Text style={styles.warningTitle}>Warnings:</Text>
+              {result.warnings.map((w, i) => (
+                <Text key={i} style={styles.warning}>• {w}</Text>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9f9f9',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-  },
-  heading: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 30,
-    marginBottom: 30,
-    color: '#000',
-  },
-  inputGroup: {
-    marginBottom: 30,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: '#000',
-  },
+  container: { flex: 1, backgroundColor: '#f9f9f9', padding: 20 },
+  heading: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginVertical: 30 },
   input: {
     backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    padding: 16,
     borderRadius: 12,
     fontSize: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    elevation: 3,
+    marginBottom: 20,
   },
   button: {
     backgroundColor: '#007AFF',
-    paddingVertical: 16,
+    padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+  buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  resultCard: {
+    marginTop: 30,
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 16,
+    elevation: 5,
   },
+  strengthText: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' },
+  strengthValue: { fontSize: 28 },
+  metrics: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 20 },
+  metric: { fontSize: 16, fontWeight: '600' },
+  checks: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 },
+  good: { color: '#22c55e', fontWeight: 'bold' },
+  bad: { color: '#ef4444', fontWeight: 'bold' },
+  warnings: { marginTop: 20 },
+  warningTitle: { fontWeight: 'bold', color: '#dc2626', marginBottom: 8 },
+  warning: { color: '#991b1b', marginLeft: 10 },
 });
