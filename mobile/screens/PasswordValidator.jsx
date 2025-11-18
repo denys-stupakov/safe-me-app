@@ -13,7 +13,7 @@ export default function PasswordValidator() {
     }
 
     try {
-      const res = await fetch(API.VALIDATOR_VALIDATE || 'http://192.168.137.1:8000/validator/validate', {
+      const res = await fetch(API.VALIDATOR_VALIDATE || 'http://172.27.224.1:8000/validator/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),

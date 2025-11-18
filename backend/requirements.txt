@@ -4,3 +4,4 @@ sqlmodel==0.0.22  # Easy way to define database models and queries (combines SQL
 python-dotenv==1.0.1  # For loading .env files
 passlib[bcrypt]==1.7.4  # For future user auth if needed (secure hashing)
 python-multipart==0.0.9  # For handling form data in APIs
+python-jose[cryptography]
