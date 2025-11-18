@@ -1,33 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Keyboard } from 'react-native';
-import API from '../config/api'; // ← your API constants
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Keyboard,
+  TouchableWithoutFeedback,
+} from 'react-native';
+import API from '../config/api';
 
 export default function PasswordValidator() {
   const [password, setPassword] = useState('');
   const [result, setResult] = useState(null);
-
+  
   const handleSubmit = async () => {
     if (!password) {
       Alert.alert('Empty', 'Please enter a password');
       return;
     }
-
+    
     try {
-      const res = await fetch(API.VALIDATOR_VALIDATE || 'http://192.168.137.1:8000/validator/validate', {
+      const res = await fetch(API.VALIDATOR_VALIDATE || 'http://167.20.10.2:8000/validator/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       });
-
+      
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Failed');
-
+      
       setResult(data);
     } catch (err) {
       Alert.alert('Error', err.message);
     }
   };
-
+  
   const getStrengthColor = () => {
     if (!result) return '#ccc';
     switch (result.color) {
@@ -39,51 +48,55 @@ export default function PasswordValidator() {
       default: return '#6b7280';
     }
   };
-
+  
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Password Validator</Text>
-
-      <TextInput
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Enter password to check strength"
-        secureTextEntry={false}
-        autoCapitalize="none"
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Analyze Password</Text>
-      </TouchableOpacity>
-
-      {result && (
-        <View style={styles.resultCard}>
-          <Text style={styles.strengthText}>Strength: <Text style={[styles.strengthValue, { color: getStrengthColor() }]}>{result.strength}</Text></Text>
-
-          <View style={styles.metrics}>
-            <Text style={styles.metric}>Length: {result.length}</Text>
-            <Text style={styles.metric}>Entropy: {result.entropy} bits</Text>
-          </View>
-
-          <View style={styles.checks}>
-            <Text style={result.has_lowercase ? styles.good : styles.bad}>Lowercase</Text>
-            <Text style={result.has_uppercase ? styles.good : styles.bad}>Uppercase</Text>
-            <Text style={result.has_digits ? styles.good : styles.bad}>Numbers</Text>
-            <Text style={result.has_special ? styles.good : styles.bad}>Special chars</Text>
-          </View>
-
-          {result.warnings.length > 0 && (
-            <View style={styles.warnings}>
-              <Text style={styles.warningTitle}>Warnings:</Text>
-              {result.warnings.map((w, i) => (
-                <Text key={i} style={styles.warning}>• {w}</Text>
-              ))}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={styles.container}>
+        <Text style={styles.heading}>Password Validator</Text>
+        
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Enter password to check strength"
+          secureTextEntry={false}
+          autoCapitalize="none"
+        />
+        
+        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+          <Text style={styles.buttonText}>Analyze Password</Text>
+        </TouchableOpacity>
+        
+        {result && (
+          <View style={styles.resultCard}>
+            <Text style={styles.strengthText}>
+              Strength: <Text style={[styles.strengthValue, { color: getStrengthColor() }]}>{result.strength}</Text>
+            </Text>
+            
+            <View style={styles.metrics}>
+              <Text style={styles.metric}>Length: {result.length}</Text>
+              <Text style={styles.metric}>Entropy: {result.entropy} bits</Text>
             </View>
-          )}
-        </View>
-      )}
-    </View>
+            
+            <View style={styles.checks}>
+              <Text style={result.has_lowercase ? styles.good : styles.bad}>Lowercase</Text>
+              <Text style={result.has_uppercase ? styles.good : styles.bad}>Uppercase</Text>
+              <Text style={result.has_digits ? styles.good : styles.bad}>Numbers</Text>
+              <Text style={result.has_special ? styles.good : styles.bad}>Special chars</Text>
+            </View>
+            
+            {result.warnings.length > 0 && (
+              <View style={styles.warnings}>
+                <Text style={styles.warningTitle}>Warnings:</Text>
+                {result.warnings.map((w, i) => (
+                  <Text key={i} style={styles.warning}>• {w}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
