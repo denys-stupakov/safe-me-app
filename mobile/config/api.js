@@ -7,9 +7,9 @@ const API = {
   HELLO: apiUrl,
   PASSWORD_GENERATE: `${apiUrl}/password/generate`,
   VALIDATOR_VALIDATE: `${apiUrl}/validator/validate`,
-  AUTH_REGISTER: `${API_BASE_URL}/auth/register`,
-  AUTH_LOGIN: `${API_BASE_URL}/auth/login`,
-  AUTH_ME: `${API_BASE_URL}/auth/me`,
+  AUTH_REGISTER: `${apiUrl}/auth/register`,
+  AUTH_LOGIN: `${apiUrl}/auth/login`,
+  AUTH_ME: `${apiUrl}/auth/me`,
 };
 
 export default API;

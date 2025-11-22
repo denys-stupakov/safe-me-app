@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 from datetime import datetime, timedelta
-from jose import JWTError, jwt
+import jwt  # This is PyJWT now
 from passlib.context import CryptContext
 from ..database.database import get_session
 from ..models.user import User
@@ -30,6 +30,20 @@ class Token(BaseModel):
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_current_user(token: str, session: Session = Depends(get_session)):
+    try:
+        # Decode the token (remove 'Bearer ' if present)
+        payload = jwt.decode(token.replace("Bearer ", ""), SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload["sub"])
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        raise HTTPException(401, "Invalid token")
+
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(401, "User not found")
+    return user
 
 
 def get_password_hash(password):
@@ -70,18 +84,3 @@ def login(form: OAuth2PasswordRequestForm = Depends(), session: Session = Depend
 @router.get("/me")
 def me(current_user: User = Depends(get_current_user)):
     return {"id": current_user.id, "email": current_user.email}
-
-
-def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Depends(get_session)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if not user_id:
-            raise HTTPException(401)
-    except JWTError:
-        raise HTTPException(401, "Invalid token")
-
-    user = session.get(User, int(user_id))
-    if not user:
-        raise HTTPException(401)
-    return user
