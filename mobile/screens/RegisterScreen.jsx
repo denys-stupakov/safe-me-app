@@ -29,7 +29,7 @@ export default function RegisterScreen() {
 
     try {
       await register(email, password);
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      navigation.navigate('Account');
     } catch (err) {
       Alert.alert('Registration Failed', err.message);
     }

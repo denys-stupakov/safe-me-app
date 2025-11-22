@@ -36,7 +36,6 @@ export default function AccountScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9f9f9', padding: 20, justifyContent: 'center', alignItems: 'center' },
   heading: { fontSize: 28, fontWeight: 'bold', marginBottom: 30 },

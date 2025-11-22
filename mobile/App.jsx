@@ -38,7 +38,7 @@ export default function App() {
     <AuthProvider>
       <SafeAreaProvider>
         <NavigationContainer>
-          <BottomNav HomeScreen={HomeScreen} />
+          <BottomNav />
         </NavigationContainer>
       </SafeAreaProvider>
     </AuthProvider>

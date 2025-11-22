@@ -27,7 +27,7 @@ export default function LoginScreen() {
 
     try {
       await login(email, password);
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      navigation.navigate('Account');
     } catch (err) {
       Alert.alert('Login Failed', err.message);
     }
