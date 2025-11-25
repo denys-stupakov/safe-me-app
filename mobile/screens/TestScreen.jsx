@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import API from "../config/api"
 
 // Use your backend URL from .env or fallback
-const API_URL = API.PASSWORD_GENERATE || 'http://192.168.1.81:8000'; // ← Change if needed
+const API_URL = API.TOPICS || 'http://192.168.1.81:8000'; // ← Change if needed
 
 export default function TestScreen() {
   const { user } = useAuth();
