@@ -1,3 +1,4 @@
+# backend/src/database/database.py
 from sqlmodel import SQLModel, create_engine, Session
 from pathlib import Path
 import os
@@ -16,6 +17,9 @@ from ..models.tip import Tip
 from ..models.tip_topics import TipTopic
 from ..models.user_viewed_tips import UserViewedTip
 from ..models.password_history import PasswordHistory
+from ..models.test import Test
+from ..models.test_answer import TestAnswer
+from ..models.test_topics import TestTopic
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)

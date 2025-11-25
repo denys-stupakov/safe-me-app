@@ -1,4 +1,3 @@
-// stacks/AuthStack.jsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AccountScreen from '../screens/AccountScreen';

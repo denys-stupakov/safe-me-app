@@ -1,14 +1,14 @@
 // components/BottomNav.jsx
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';  // ← THIS IS THE ONLY CHANGE (Expo version)
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
 import TestScreen from '../screens/TestScreen';
 import TipsScreen from '../screens/TipsScreen';
 import ToolsStack from '../stacks/ToolsStack';
-import AuthStack from '../stacks/AuthStack';   // ← This is the key change!
+import AuthStack from '../stacks/AuthStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -39,7 +39,7 @@ export default function BottomNav() {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => <Icon name="home-outline" size={26} color={color} />
+          tabBarIcon: ({ color }) => <Ionicons name="home-outline" size={26} color={color} />
         }}
       />
       <Tab.Screen
@@ -47,7 +47,7 @@ export default function BottomNav() {
         component={TestScreen}
         options={{
           tabBarLabel: 'Test',
-          tabBarIcon: ({ color }) => <Icon name="help-circle-outline" size={26} color={color} />
+          tabBarIcon: ({ color }) => <Ionicons name="help-circle-outline" size={26} color={color} />
         }}
       />
       <Tab.Screen
@@ -55,7 +55,7 @@ export default function BottomNav() {
         component={TipsScreen}
         options={{
           tabBarLabel: 'Tips',
-          tabBarIcon: ({ color }) => <Icon name="bulb-outline" size={26} color={color} />
+          tabBarIcon: ({ color }) => <Ionicons name="bulb-outline" size={26} color={color} />
         }}
       />
       <Tab.Screen
@@ -63,7 +63,7 @@ export default function BottomNav() {
         component={ToolsStack}
         options={{
           tabBarLabel: 'Tools',
-          tabBarIcon: ({ color }) => <Icon name="construct-outline" size={26} color={color} />
+          tabBarIcon: ({ color }) => <Ionicons name="construct-outline" size={26} color={color} />
         }}
       />
       <Tab.Screen
@@ -71,7 +71,7 @@ export default function BottomNav() {
         component={AuthStack}
         options={{
           tabBarLabel: 'Account',
-          tabBarIcon: ({ color }) => <Icon name="person-circle-outline" size={26} color={color} />
+          tabBarIcon: ({ color }) => <Ionicons name="person-circle-outline" size={26} color={color} />
         }}
       />
     </Tab.Navigator>
