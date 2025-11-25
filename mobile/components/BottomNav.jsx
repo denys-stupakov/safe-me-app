@@ -1,4 +1,3 @@
-// components/BottomNav.jsx
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from '@expo/vector-icons/Ionicons';  // ← THIS IS THE ONLY CHANGE (Expo version)
@@ -14,7 +13,7 @@ const Tab = createBottomTabNavigator();
 
 export default function BottomNav() {
   const insets = useSafeAreaInsets();
-  
+
   return (
     <Tab.Navigator
       screenOptions={{

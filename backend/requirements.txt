@@ -1,7 +1,8 @@
-fastapi==0.115.0  # For building the API
-uvicorn==0.30.6   # Server to run FastAPI
-sqlmodel==0.0.22  # Easy way to define database models and queries (combines SQLAlchemy + Pydantic)
-python-dotenv==1.0.1  # For loading .env files
-passlib[bcrypt]==1.7.4  # For future user auth if needed (secure hashing)
-python-multipart==0.0.9  # For handling form data in APIs
-jwt
+fastapi==0.115.4
+uvicorn[standard]==0.32.0
+sqlmodel==0.0.22
+PyJWT[crypto]==2.9.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.2.1
+python-dotenv==1.0.1
+python-multipart==0.0.9
