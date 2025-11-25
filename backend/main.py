@@ -8,6 +8,9 @@ from src.routes.password import router as password_router
 from src.routes.validator import router as validator_router
 from src.routes.auth import router as auth_router
 
+from src.routes.test import router as test_router
+from src.routes.topic import router as topic_router
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Safe Me backend is starting up...")
@@ -36,6 +39,9 @@ app.add_middleware(
 app.include_router(password_router)
 app.include_router(validator_router)
 app.include_router(auth_router)
+
+app.include_router(topic_router)
+app.include_router(test_router)
 
 @app.get("/")
 async def root():
