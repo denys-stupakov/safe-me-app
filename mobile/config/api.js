@@ -10,7 +10,7 @@ const API = {
   AUTH_REGISTER: `${apiUrl}/auth/register`,
   AUTH_LOGIN: `${apiUrl}/auth/login`,
   AUTH_ME: `${apiUrl}/auth/me`,
-  TOPICS:  `${apiUrl}/topics`
+  TOPICS:  `${apiUrl}/topics/`
 };
 
 export default API;

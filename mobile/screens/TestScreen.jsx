@@ -27,7 +27,7 @@ export default function TestScreen() {
   useEffect(() => {
     const fetchTopics = async () => {
       try {
-        const response = await fetch(`${API_URL}/topics`);
+        const response = await fetch(`${API_URL}`);
         if (!response.ok) throw new Error('Failed to fetch');
         const data = await response.json();
         setTopics(data);
