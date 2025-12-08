@@ -17,7 +17,7 @@ export default function RegisterScreen() {
   const validate = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return 'Invalid email';
-    if (password.length < 16) return 'Password must be at least 16 characters';
+    if (password.length < 24) return 'Password must be at least 24 characters';
     if (password !== repeat) return 'Passwords do not match';
     return null;
   };

@@ -35,10 +35,10 @@ def generate_password(
     print(length)
     print(exclude_special)
 
-    if not 16 <= length <= 64:
+    if not 24 <= length <= 64:
         raise HTTPException(400, "Length must be 16–64")
 
-    min_length = 17 if exclude_special else 16
+    min_length = 26 if exclude_special else 24
     if length < min_length:
         raise HTTPException(400, f"Minimum length is {min_length} when excluding special chars")
 
@@ -48,15 +48,15 @@ def generate_password(
 
     entropy = calculate_entropy(len(charset), length)
 
-    if entropy < 100:
+    if entropy < 150:
         raise HTTPException(400,
-                            f"Entropy too low: {entropy} bits. Need ≥ 100. Try longer password or include special chars.")
+                            f"Entropy too low: {entropy} bits. Need ≥ 150. Try longer password or include special chars.")
 
-    if entropy < 80:
+    if entropy < 100:
         strength = "weak"
-    elif entropy < 100:
+    elif entropy < 140:
         strength = "medium"
-    elif entropy < 128:
+    elif entropy < 160:
         strength = "strong"
     else:
         strength = "very_strong"

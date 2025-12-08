@@ -154,7 +154,7 @@ export default function TestScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9' },
+  container: { flex: 1, backgroundColor: '#f9f9f9', paddingTop: 70 },
   content: { padding: 20, paddingBottom: 40 },
   title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 8, color: '#000' },
   subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 30 },

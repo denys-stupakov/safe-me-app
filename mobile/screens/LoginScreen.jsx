@@ -16,7 +16,7 @@ export default function LoginScreen() {
   const validate = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return 'Invalid email address';
-    if (password.length < 16) return 'Password too short (min 16)';
+    if (password.length < 24) return 'Password too short (min 24)';
     return null;
   };
 
@@ -56,7 +56,7 @@ export default function LoginScreen() {
             style={styles.input}
             value={password}
             onChangeText={setPassword}
-            placeholder="Minimum 16 characters"
+            placeholder="Minimum 24 characters"
             secureTextEntry
           />
 

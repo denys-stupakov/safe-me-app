@@ -13,8 +13,8 @@ import {
 import API from "../config/api"
 
 export default function PasswordGenerator() {
-  const [rawLength, setRawLength] = useState('16');
-  const [length, setLength] = useState(16);
+  const [rawLength, setRawLength] = useState('24');
+  const [length, setLength] = useState(24);
   const [excludeSpecial, setExcludeSpecial] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState(''); // ← NEW STATE
   const inputRef = useRef(null);
@@ -25,7 +25,7 @@ export default function PasswordGenerator() {
   };
 
   const validateAndSetLength = () => {
-    const min = excludeSpecial ? 17 : 16;
+    const min = excludeSpecial ? 26 : 24;
     let num = parseInt(rawLength);
 
     if (isNaN(num) || rawLength.trim() === '') {
@@ -60,9 +60,9 @@ export default function PasswordGenerator() {
     setExcludeSpecial(prev => {
       const newValue = !prev;
       console.log('Checkbox toggled → exclude_special =', newValue);
-      if (newValue && length < 17) {
-        setLength(17);
-        setRawLength('17');
+      if (newValue && length < 26) {
+        setLength(26);
+        setRawLength('26');
       }
       return newValue;
     });
@@ -111,7 +111,7 @@ export default function PasswordGenerator() {
           onBlur={handleBlur}
           keyboardType="numeric"
           maxLength={2}
-          placeholder="16"
+          placeholder="24"
         />
       </View>
 

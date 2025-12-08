@@ -37,16 +37,16 @@ def validate_password(req: ValidateRequest):
     entropy = calculate_entropy(pwd)
 
     # Strength rating
-    if entropy < 60:
+    if entropy < 80:
         strength = "Very Weak"
         color = "Red"
-    elif entropy < 80:
+    elif entropy < 100:
         strength = "Weak"
         color = "Orange"
-    elif entropy < 100:
+    elif entropy < 140:
         strength = "Medium"
         color = "Yellow"
-    elif entropy < 128:
+    elif entropy < 160:
         strength = "Strong"
         color = "Green"
     else:
