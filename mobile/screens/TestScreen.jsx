@@ -11,10 +11,9 @@ import {
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import API from "../config/api"
+import Constants from 'expo-constants';
 
-// Use your backend URL from .env or fallback
-const API_URL = API.TOPICS || 'http://192.168.1.81:8000'; // ← Change if needed
+const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
 export default function TestScreen() {
   const { user } = useAuth();
@@ -27,14 +26,12 @@ export default function TestScreen() {
   useEffect(() => {
     const fetchTopics = async () => {
       try {
-        const response = await fetch(`${API_URL}`);
-        if (!response.ok) throw new Error('Failed to fetch');
+        const response = await fetch(`${API_URL}/topics`);
+        if (!response.ok) throw new Error();
         const data = await response.json();
         setTopics(data);
       } catch (error) {
-        console.error('Failed to load topics:', error);
-        Alert.alert('Offline Mode', 'Using default topics...');
-        // Fallback topics (in case backend is off)
+        Alert.alert('Offline Mode', 'Using default topics');
         setTopics([
           { id: 1, name: 'Password management' },
           { id: 2, name: 'Phishing awareness' },
@@ -48,49 +45,45 @@ export default function TestScreen() {
         setLoading(false);
       }
     };
-    
     fetchTopics();
   }, []);
   
   const toggleTopic = (topicId) => {
-    setSelectedTopics(prev =>
+    setSelectedTopics((prev) =>
       prev.includes(topicId)
-        ? prev.filter(id => id !== topicId)
+        ? prev.filter((id) => id !== topicId)
         : [...prev, topicId]
     );
   };
   
   const startTest = async () => {
     if (selectedTopics.length === 0) {
-      Alert.alert('Select Topics', 'Please choose at least one topic.');
+      Alert.alert('Select Topics', 'Please select at least one topic');
       return;
     }
     
     try {
       const response = await fetch(
-        `${API_URL}/tests/random?topic_ids=${selectedTopics.join(',')}`
+        `${API_URL}/tests/random?topic_ids=${selectedTopics.join(',')}&limit=10`
       );
-      if (!response.ok) throw new Error('Failed to load questions');
+      if (!response.ok) throw new Error();
       const tests = await response.json();
       
-      // Randomize order
-      const shuffled = tests.sort(() => Math.random() - 0.5);
+      if (tests.length === 0) {
+        Alert.alert('No Questions', 'No questions found for selected topics');
+        return;
+      }
       
-      navigation.navigate('TestTaking', {
-        tests: shuffled,
-        selectedTopicNames: topics
-        .filter(t => selectedTopics.includes(t.id))
-        .map(t => t.name),
-      });
+      navigation.navigate('TestTaking', { tests });
     } catch (error) {
-      Alert.alert('Error', 'Could not load test. Try again later.');
+      Alert.alert('Error', 'Could not load test');
     }
   };
   
   if (!user) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Security Test</Text>
+        <Text style={styles.heading}>Security Test</Text>
         <TouchableOpacity
           style={styles.loginButton}
           onPress={() => navigation.navigate('Account')}
@@ -111,31 +104,33 @@ export default function TestScreen() {
   }
   
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Security Test</Text>
+    <View style={styles.container}>
+      <Text style={styles.heading}>Security Test</Text>
       <Text style={styles.subtitle}>Choose topics to test your knowledge</Text>
       
-      <View style={styles.topicContainer}>
-        {topics.map(topic => (
-          <TouchableOpacity
-            key={topic.id}
-            style={[
-              styles.topicButton,
-              selectedTopics.includes(topic.id) && styles.topicButtonSelected,
-            ]}
-            onPress={() => toggleTopic(topic.id)}
-          >
-            <Text
+      <ScrollView contentContainerStyle={styles.topicScroll}>
+        <View style={styles.topicContainer}>
+          {topics.map((topic) => (
+            <TouchableOpacity
+              key={topic.id}
               style={[
-                styles.topicText,
-                selectedTopics.includes(topic.id) && styles.topicTextSelected,
+                styles.topicButton,
+                selectedTopics.includes(topic.id) && styles.topicButtonSelected,
               ]}
+              onPress={() => toggleTopic(topic.id)}
             >
-              {topic.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text
+                style={[
+                  styles.topicText,
+                  selectedTopics.includes(topic.id) && styles.topicTextSelected,
+                ]}
+              >
+                {topic.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
       
       <TouchableOpacity
         style={[
@@ -149,41 +144,86 @@ export default function TestScreen() {
           Start Test ({selectedTopics.length} selected)
         </Text>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9', paddingTop: 70 },
-  content: { padding: 20, paddingBottom: 40 },
-  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 8, color: '#000' },
-  subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 30 },
-  topicContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 40 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f9f9f9',
+    paddingTop: 40,
+  },
+  heading: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 30,
+    marginTop: 30,
+    color: '#000',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  topicScroll: {
+    flexGrow: 1,
+  },
+  topicContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+  },
   topicButton: {
     backgroundColor: '#e0e0e0',
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 30,
-    borderWidth: 2,
-    borderColor: 'transparent',
   },
-  topicButtonSelected: { backgroundColor: '#007AFF', borderColor: '#005edc' },
-  topicText: { fontSize: 15, fontWeight: '600', color: '#333' },
-  topicTextSelected: { color: '#fff' },
+  topicButtonSelected: {
+    backgroundColor: '#007AFF',
+  },
+  topicText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  topicTextSelected: {
+    color: '#fff',
+  },
   startButton: {
     backgroundColor: '#007AFF',
-    padding: 20,
+    padding: 18,
     borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 40,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 12,
   },
-  startButtonDisabled: { backgroundColor: '#999' },
-  startButtonText: { color: '#fff', fontSize: 19, fontWeight: 'bold' },
-  loginButton: { backgroundColor: '#007AFF', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 14 },
-  loginButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  loadingText: { marginTop: 16, fontSize: 16, color: '#666' },
+  startButtonDisabled: {
+    backgroundColor: '#aaa',
+  },
+  startButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  loginButton: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 12,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 16,
+    color: '#666',
+  },
 });

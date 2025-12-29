@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';  // ← THIS IS THE ONLY CHA
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
-import TestScreen from '../screens/TestScreen';
+import TestStack from '../stacks/TestStack';
 import TipsScreen from '../screens/TipsScreen';
 import ToolsStack from '../stacks/ToolsStack';
 import AuthStack from '../stacks/AuthStack';
@@ -43,7 +43,7 @@ export default function BottomNav() {
       />
       <Tab.Screen
         name="Test"
-        component={TestScreen}
+        component={TestStack}
         options={{
           tabBarLabel: 'Test',
           tabBarIcon: ({ color }) => <Ionicons name="help-circle-outline" size={26} color={color} />

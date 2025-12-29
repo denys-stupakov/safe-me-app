@@ -1,104 +1,104 @@
-# backend/src/routes/test.py
-from fastapi import APIRouter, Depends, HTTPException, Query, Body
-from sqlmodel import Session, select, func, SQLModel
+# backend/src/routes/tests.py
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select, func
 from typing import List
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel
 from ..database.database import get_session
 from ..models.test import Test
 from ..models.test_answer import TestAnswer
 from ..models.test_topics import TestTopic
-from ..models.topic import Topic
 
-router = APIRouter(prefix="/tests", tags=["tests"])
+router = APIRouter(prefix="/tests", tags=["Tests"])
 
-
-# Request model — same style as your Password model
-class TestRequest(BaseModel):
-    topic_ids: List[int] = Field(..., description="List of topic IDs to include in the test")
-    limit: int = Field(10, ge=1, le=30, description="Number of random questions (1–30)")
-
-    @validator("topic_ids")
-    def must_not_be_empty(cls, v):
-        if not v:
-            raise ValueError("At least one topic must be selected")
-        return v
-
-
-# Response model — clean and frontend-friendly
-class TestAnswerRead(SQLModel):
+# Response models (same as before)
+class TestAnswerRead(BaseModel):
     id: int
     content: str
-    is_correct: bool = False  # hidden from user in real app, but useful for dev/testing
 
-    class Config:
-        orm_mode = True
-
-
-class TestRead(SQLModel):
+class TestRead(BaseModel):
     id: int
     content: str
     answers: List[TestAnswerRead]
 
-    class Config:
-        orm_mode = True
+class ScoreRequest(BaseModel):
+    test_id: int
+    selected_answer_ids: List[int]
 
+class WrongQuestion(BaseModel):
+    content: str
+    selected: List[str]
+    correct: List[str]
 
-@router.post("/random", response_model=List[TestRead])
-def generate_random_test(
-    request: TestRequest = Body(...),
+class ScoreResponse(BaseModel):
+    score: float
+    total: int
+    correct: int
+    wrong_questions: List[WrongQuestion]
+
+@router.get("/random", response_model=List[TestRead])
+def get_random_tests(
+    topic_ids: str = None,
+    limit: int = 10,
     session: Session = Depends(get_session)
 ):
-    """
-    Generate a random test from selected topics.
-    Same structure & style as /password/generate
-    """
-    topic_ids = request.topic_ids
-    limit = request.limit
+    query = select(Test)
 
-    # Validate all topics exist
-    existing_count = session.exec(
-        select(func.count()).select_from(Topic).where(Topic.id.in_(topic_ids))
-    ).one()
+    if topic_ids:
+        ids = [int(x) for x in topic_ids.split(",") if x.strip()]
+        if ids:
+            query = query.join(TestTopic).where(TestTopic.topic_id.in_(ids))
 
-    if existing_count != len(topic_ids):
-        raise HTTPException(
-            status_code=404,
-            detail="One or more selected topics not found"
-        )
+    tests = session.exec(query.order_by(func.random()).limit(limit)).all()
 
-    # Get random questions from selected topics
-    tests = session.exec(
-        select(Test)
-        .join(TestTopic, Test.id == TestTopic.test_id)
-        .where(TestTopic.topic_id.in_(topic_ids))
-        .order_by(func.random())
-        .limit(limit)
-    ).all()
-
-    if not tests:
-        raise HTTPException(
-            status_code=404,
-            detail="No questions found for the selected topics"
-        )
-
-    # Build response with shuffled answers
     result = []
-    import random
-
     for test in tests:
+        answers = session.exec(select(TestAnswer).where(TestAnswer.test_id == test.id)).all()
+        result.append(TestRead(
+            id=test.id,
+            content=test.content,
+            answers=[TestAnswerRead(id=a.id, content=a.content) for a in answers]
+        ))
+    return result
+
+@router.post("/score", response_model=ScoreResponse)
+def score_test(
+    data: List[ScoreRequest],
+    session: Session = Depends(get_session)
+):
+    if not data:
+        return ScoreResponse(score=0, total=0, correct=0, wrong_questions=[])
+
+    total = len(data)
+    correct = 0
+    wrong = []
+
+    for item in data:
+        # Get all answers for this test
         answers = session.exec(
-            select(TestAnswer).where(TestAnswer.test_id == test.id)
+            select(TestAnswer).where(TestAnswer.test_id == item.test_id)
         ).all()
 
-        # Shuffle answers so correct one isn't always first
-        random.shuffle(answers)
+        if not answers:
+            continue
 
-        result.append(
-            TestRead(
-                id=test.id,
-                content=test.content,
-                answers=[TestAnswerRead.from_orm(a) for a in answers]
-            )
-        )
+        correct_ids = {a.id for a in answers if a.is_correct}
+        selected_ids = set(item.selected_answer_ids)
 
-    return result
+        if selected_ids == correct_ids:
+            correct += 1
+        else:
+            test = session.get(Test, item.test_id)
+            wrong.append(WrongQuestion(
+                content=test.content if test else "Unknown question",
+                selected=[a.content for a in answers if a.id in selected_ids],
+                correct=[a.content for a in answers if a.id in correct_ids]
+            ))
+
+    score = round((correct / total * 100), 1) if total > 0 else 0
+
+    return ScoreResponse(
+        score=score,
+        total=total,
+        correct=correct,
+        wrong_questions=wrong
+    )
