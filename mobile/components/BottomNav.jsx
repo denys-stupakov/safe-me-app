@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
 import TestStack from '../stacks/TestStack';
-import TipsScreen from '../screens/TipsScreen';
+import TipsStack from '../stacks/TipsStack';
 import ToolsStack from '../stacks/ToolsStack';
 import AuthStack from '../stacks/AuthStack';
 
@@ -51,7 +51,7 @@ export default function BottomNav() {
       />
       <Tab.Screen
         name="Tips"
-        component={TipsScreen}
+        component={TipsStack}
         options={{
           tabBarLabel: 'Tips',
           tabBarIcon: ({ color }) => <Ionicons name="bulb-outline" size={26} color={color} />

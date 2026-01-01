@@ -10,6 +10,7 @@ from src.routes.auth import router as auth_router
 
 from src.routes.test import router as test_router
 from src.routes.topic import router as topic_router
+from src.routes.tips import router as tips_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,6 +43,7 @@ app.include_router(auth_router)
 
 app.include_router(topic_router)
 app.include_router(test_router)
+app.include_router(tips_router)
 
 @app.get("/")
 async def root():

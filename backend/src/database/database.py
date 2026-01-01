@@ -25,4 +25,5 @@ from ..models.test import Test
 from ..models.test_answer import TestAnswer
 from ..models.test_topics import TestTopic
 from ..models.password_history import PasswordHistory
+from ..models.user_favorite_tip import UserFavoriteTip
 # Add any other models here
