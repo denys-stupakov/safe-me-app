@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Constants from 'expo-constants';
+import * as SecureStore from "expo-secure-store";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -26,16 +27,30 @@ export default function TipsReadingScreen({ route }) {
       await fetch(`${API_URL}/tips/view/${currentTip.id}`, { method: 'POST' });
     } catch (err) {}
   };
-  
-  const toggleFavorite = async () => {
-    try {
-      const res = await fetch(`${API_URL}/tips/favorite/${currentTip.id}`, { method: 'POST' });
-      const data = await res.json();
-      setIsFavorite(data.message.includes('Added'));
-    } catch (err) {
-      Alert.alert('Error', 'Could not save favorite');
-    }
-  };
+
+    const toggleFavorite = async () => {
+        try {
+            const token = await SecureStore.getItemAsync("access_token");
+
+            const res = await fetch(`${API_URL}/tips/favorite/${currentTip.id}`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (!res.ok) {
+                throw new Error(await res.text());
+            }
+
+            const data = await res.json();
+            setIsFavorite(data.message.includes("Added"));
+        } catch (err) {
+            console.log("Favorite error:", err.message);
+            Alert.alert("Error", "Could not save favorite");
+        }
+    };
   
   const nextTip = () => {
     markViewed();

@@ -37,27 +37,37 @@ export const AuthProvider = ({ children }) => {
     bootstrapAsync();
   }, []);
 
-  const login = async (email, password) => {
-    const formBody = new URLSearchParams();
-    formBody.append('username', email);
-    formBody.append('password', password);
+    const login = async (email, password) => {
+        const res = await fetch(API.AUTH_LOGIN, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+                username: email,
+                password: password,
+            }).toString(),
+        });
 
-    const res = await fetch(API.AUTH_LOGIN, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formBody.toString(),
-    });
+        if (!res.ok) {
+            throw new Error("Invalid email or password");
+        }
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Login failed');
+        const data = await res.json();
 
-    await SecureStore.setItemAsync('access_token', data.access_token);
-    const userRes = await fetch(API.AUTH_ME, {
-      headers: { Authorization: `Bearer ${data.access_token}` }
-    });
-    const userData = await userRes.json();
-    setUser(userData);
-  };
+        // 🔐 Save JWT
+        await SecureStore.setItemAsync("access_token", data.access_token);
+
+        // 👤 Load user profile
+        const me = await fetch(API.AUTH_ME, {
+            headers: {
+                Authorization: `Bearer ${data.access_token}`,
+            },
+        });
+
+        const user = await me.json();
+        setUser(user);
+    };
 
   const register = async (email, password) => {
     const res = await fetch(API.AUTH_REGISTER, {

@@ -8,6 +8,9 @@ from ..database.database import get_session
 from ..models.user import User
 from pydantic import BaseModel
 import os
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -32,12 +35,16 @@ def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def get_current_user(token: str, session: Session = Depends(get_session)):
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    session: Session = Depends(get_session)
+):
     try:
-        # Decode the token (remove 'Bearer ' if present)
-        payload = jwt.decode(token.replace("Bearer ", ""), SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload["sub"])
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(401, "Token expired")
+    except jwt.InvalidTokenError:
         raise HTTPException(401, "Invalid token")
 
     user = session.get(User, user_id)

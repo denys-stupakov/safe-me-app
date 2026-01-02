@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session, select, func
 from typing import List
 from pydantic import BaseModel
+
+from .auth import get_current_user
 from ..database.database import get_session
 from ..models.tip import Tip
 from ..models.tip_topics import TipTopic
@@ -63,10 +65,18 @@ def mark_tip_viewed(tip_id: int, session: Session = Depends(get_session)):
     return {"message": "Viewed"}
 
 @router.post("/favorite/{tip_id}")
-def toggle_favorite(tip_id: int, session: Session = Depends(get_session)):
-    user_id = 1
+def toggle_favorite(
+    tip_id: int,
+    session: Session = Depends(get_session),
+    user = Depends(get_current_user)
+):
+    user_id = user.id
+
     existing = session.exec(
-        select(UserFavoriteTip).where(UserFavoriteTip.user_id == user_id, UserFavoriteTip.tip_id == tip_id)
+        select(UserFavoriteTip).where(
+            UserFavoriteTip.user_id == user_id,
+            UserFavoriteTip.tip_id == tip_id
+        )
     ).first()
 
     if existing:
