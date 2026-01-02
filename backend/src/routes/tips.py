@@ -2,10 +2,11 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select, func
 from typing import List
-from pydantic import BaseModel  # ← THIS WAS MISSING!
+from pydantic import BaseModel
 from ..database.database import get_session
 from ..models.tip import Tip
 from ..models.tip_topics import TipTopic
+from ..models.topic import Topic  # ← NEW: to get topic names
 from ..models.user_viewed_tips import UserViewedTip
 from ..models.user_favorite_tip import UserFavoriteTip
 
@@ -15,6 +16,7 @@ class TipRead(BaseModel):
     id: int
     title: str
     content: str
+    topics: List[str]  # ← NEW: list of topic names for display
 
 @router.get("/random", response_model=List[TipRead])
 def get_random_tips(
@@ -28,15 +30,29 @@ def get_random_tips(
         if ids:
             query = query.join(TipTopic).where(TipTopic.topic_id.in_(ids))
 
-    # Get ALL matching tips and randomize on server
+    # Get ALL matching tips in random order
     tips = session.exec(query.order_by(func.random())).all()
 
-    return [TipRead(id=t.id, title=t.title, content=t.content) for t in tips]
+    result = []
+    for tip in tips:
+        # Get topic names for this tip
+        topic_names = session.exec(
+            select(Topic.name)
+            .join(TipTopic)
+            .where(TipTopic.tip_id == tip.id)
+        ).all()
+
+        result.append(TipRead(
+            id=tip.id,
+            title=tip.title,
+            content=tip.content,
+            topics=topic_names  # ← sends topic names to frontend
+        ))
+    return result
 
 @router.post("/view/{tip_id}")
 def mark_tip_viewed(tip_id: int, session: Session = Depends(get_session)):
-    # For testing, use user_id = 1
-    user_id = 1
+    user_id = 1  # test user
     existing = session.exec(
         select(UserViewedTip).where(UserViewedTip.user_id == user_id, UserViewedTip.tip_id == tip_id)
     ).first()

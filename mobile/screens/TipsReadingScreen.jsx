@@ -24,9 +24,7 @@ export default function TipsReadingScreen({ route }) {
   const markViewed = async () => {
     try {
       await fetch(`${API_URL}/tips/view/${currentTip.id}`, { method: 'POST' });
-    } catch (err) {
-      // Silent — not critical
-    }
+    } catch (err) {}
   };
   
   const toggleFavorite = async () => {
@@ -45,7 +43,7 @@ export default function TipsReadingScreen({ route }) {
       setCurrentIndex(currentIndex + 1);
       setIsFavorite(false);
     } else {
-      Alert.alert('Finished', 'You\'ve read all tips!');
+      Alert.alert('All Done!', `You've read all ${tips.length} tips!`);
       navigation.navigate('TipsHome');
     }
   };
@@ -61,6 +59,16 @@ export default function TipsReadingScreen({ route }) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.tipCard}>
           <Text style={styles.title}>{currentTip.title}</Text>
+          
+          {/* NEW: Topic tags below title */}
+          <View style={styles.tagContainer}>
+            {currentTip.topics.map((topic, i) => (
+              <View key={i} style={styles.tag}>
+                <Text style={styles.tagText}>{topic}</Text>
+              </View>
+            ))}
+          </View>
+          
           <Text style={styles.contentText}>{currentTip.content}</Text>
         </View>
       </ScrollView>
@@ -87,7 +95,10 @@ const styles = StyleSheet.create({
   heading: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginTop: 30, marginBottom: 30, color: '#000' },
   content: { paddingHorizontal: 20, flexGrow: 1 },
   tipCard: { backgroundColor: '#fff', padding: 20, borderRadius: 16, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16, color: '#000' },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12, color: '#000' },
+  tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  tag: { backgroundColor: '#e0e0e0', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  tagText: { fontSize: 13, color: '#333', fontWeight: '600' },
   contentText: { fontSize: 17, lineHeight: 26, color: '#333' },
   buttonRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 40 },
   favoriteButton: { backgroundColor: '#34C759', padding: 16, borderRadius: 12, flex: 1, marginRight: 8, alignItems: 'center' },
