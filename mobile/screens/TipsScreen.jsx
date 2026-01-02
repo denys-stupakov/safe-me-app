@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import * as SecureStore from "expo-secure-store";
 
-const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.84:8000';
+const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
 export default function TipsScreen() {
   const { user } = useAuth();  // ← Get user from auth context
