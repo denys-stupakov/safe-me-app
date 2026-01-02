@@ -1,4 +1,3 @@
-// screens/TipsReadingScreen.jsx
 import React, { useState } from 'react';
 import {
   View,
@@ -9,8 +8,9 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Constants from 'expo-constants';
 
-const API_URL = 'http://192.168.1.84:8000';
+const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
 export default function TipsReadingScreen({ route }) {
   const { tips, currentIndex: initialIndex = 0 } = route.params;
