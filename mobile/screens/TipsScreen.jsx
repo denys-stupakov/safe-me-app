@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../auth/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import Constants from 'expo-constants';
+import * as SecureStore from "expo-secure-store";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.84:8000';
 
@@ -55,28 +56,49 @@ export default function TipsScreen() {
         : [...prev, topicId]
     );
   };
-  
-  const startReading = async () => {
-    if (selectedTopics.length === 0) {
-      Alert.alert('Select Topics', 'Please select at least one topic');
-      return;
-    }
-    
-    try {
-      const response = await fetch(`${API_URL}/tips/random?topic_ids=${selectedTopics.join(',')}`);
-      if (!response.ok) throw new Error();
-      const tips = await response.json();
-      
-      if (tips.length === 0) {
-        Alert.alert('No Tips', 'No tips found for selected topics');
-        return;
-      }
-      
-      navigation.navigate('TipsReading', { tips });
-    } catch (error) {
-      Alert.alert('Error', 'Could not load tips');
-    }
-  };
+
+    const startReading = async () => {
+        if (selectedTopics.length === 0) {
+            Alert.alert('Select Topics', 'Please select at least one topic');
+            return;
+        }
+
+        try {
+            const token = await SecureStore.getItemAsync("access_token");
+
+            const response = await fetch(
+                `${API_URL}/tips/random?topic_ids=${selectedTopics.join(',')}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    Alert.alert('Unauthorized', 'Your session has expired. Please log in again.');
+                } else {
+                    Alert.alert('Error', 'Could not load tips');
+                }
+                return;
+            }
+
+            const tips = await response.json();
+
+            if (tips.length === 0) {
+                Alert.alert('No Tips', 'No tips found for selected topics');
+                return;
+            }
+
+            navigation.navigate('TipsReading', { tips });
+        } catch (error) {
+            Alert.alert('Error', 'Could not load tips');
+            console.error(error);
+        }
+    };
   
   // ← LOGIN REQUIRED — same as TestScreen
   if (!user) {

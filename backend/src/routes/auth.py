@@ -91,3 +91,36 @@ def login(form: OAuth2PasswordRequestForm = Depends(), session: Session = Depend
 @router.get("/me")
 def me(current_user: User = Depends(get_current_user)):
     return {"id": current_user.id, "email": current_user.email}
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+def change_password(
+    req: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    # 1️⃣ Verify current password
+    if not verify_password(req.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is incorrect"
+        )
+
+    # 2️⃣ Optional: validate new password strength
+    if len(req.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 8 characters long"
+        )
+
+    # 3️⃣ Hash new password and save
+    current_user.hashed_password = get_password_hash(req.new_password)
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+
+    return {"message": "Password changed successfully"}

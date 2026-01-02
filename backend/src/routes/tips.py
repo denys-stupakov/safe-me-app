@@ -23,34 +23,40 @@ class TipRead(BaseModel):
 
 @router.get("/random", response_model=List[TipRead])
 def get_random_tips(
-    topic_ids: str = None,  # comma-separated
-    session: Session = Depends(get_session)
+        topic_ids: str = None,  # comma-separated topic IDs
+        session: Session = Depends(get_session),
+        user: User = Depends(get_current_user)
 ):
-    query = select(Tip)
+    # 1️⃣ Subquery for tips the user already viewed
+    seen_subq = select(UserViewedTip.tip_id).where(UserViewedTip.user_id == user.id)
 
+    # 2️⃣ Base query: tips not viewed
+    query = select(Tip).where(Tip.id.not_in(seen_subq))
+
+    # 3️⃣ Filter by topics if provided
     if topic_ids:
         ids = [int(x) for x in topic_ids.split(",") if x.strip()]
         if ids:
             query = query.join(TipTopic).where(TipTopic.topic_id.in_(ids))
 
-    # Get ALL matching tips in random order
+    # 4️⃣ Order randomly
     tips = session.exec(query.order_by(func.random())).all()
 
+    # 5️⃣ Include topic names
     result = []
     for tip in tips:
-        # Get topic names for this tip
         topic_names = session.exec(
             select(Topic.name)
             .join(TipTopic)
             .where(TipTopic.tip_id == tip.id)
         ).all()
-
         result.append(TipRead(
             id=tip.id,
             title=tip.title,
             content=tip.content,
-            topics=topic_names  # ← sends topic names to frontend
+            topics=topic_names
         ))
+
     return result
 
 @router.post("/view/{tip_id}")
@@ -110,7 +116,7 @@ def mark_tip_viewed(
 
     return {"message": "Tip marked as viewed"}
 
-@router.get("/unseen")
+@router.get("/random", response_model=List[TipRead])
 def get_unseen_tips(session: Session = Depends(get_session), user: User = Depends(get_current_user)):
     # IDs of tips already viewed by user
     seen_subq = select(UserViewedTip.tip_id).where(UserViewedTip.user_id == user.id)
