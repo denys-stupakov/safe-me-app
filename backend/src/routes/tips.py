@@ -9,6 +9,7 @@ from ..database.database import get_session
 from ..models.tip import Tip
 from ..models.tip_topics import TipTopic
 from ..models.topic import Topic  # ← NEW: to get topic names
+from ..models.user import User
 from ..models.user_viewed_tips import UserViewedTip
 from ..models.user_favorite_tip import UserFavoriteTip
 
@@ -88,3 +89,35 @@ def toggle_favorite(
         session.add(favorite)
         session.commit()
         return {"message": "Added to favorites"}
+
+@router.post("/viewed/{tip_id}")
+def mark_tip_viewed(
+        tip_id: int,
+        session: Session = Depends(get_session),
+        user: User = Depends(get_current_user)
+):
+    existing = session.exec(
+        select(UserViewedTip).where(
+            UserViewedTip.user_id == user.id,
+            UserViewedTip.tip_id == tip_id
+        )
+    ).first()
+
+    if not existing:
+        viewed = UserViewedTip(user_id=user.id, tip_id=tip_id)
+        session.add(viewed)
+        session.commit()
+
+    return {"message": "Tip marked as viewed"}
+
+@router.get("/unseen")
+def get_unseen_tips(session: Session = Depends(get_session), user: User = Depends(get_current_user)):
+    # IDs of tips already viewed by user
+    seen_subq = select(UserViewedTip.tip_id).where(UserViewedTip.user_id == user.id)
+
+    # Tips not viewed yet
+    unseen_tips = session.exec(
+        select(Tip).where(Tip.id.not_in(seen_subq))
+    ).all()
+
+    return unseen_tips

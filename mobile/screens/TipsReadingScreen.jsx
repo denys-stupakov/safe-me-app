@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -19,14 +19,25 @@ export default function TipsReadingScreen({ route }) {
   
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isFavorite, setIsFavorite] = useState(false);
+    useEffect(() => {
+        if (currentTip) {
+            markViewed(currentTip.id);
+        }
+    }, [currentTip]);
   
   const currentTip = tips[currentIndex];
-  
-  const markViewed = async () => {
-    try {
-      await fetch(`${API_URL}/tips/view/${currentTip.id}`, { method: 'POST' });
-    } catch (err) {}
-  };
+
+    const markViewed = async (tipId) => {
+        try {
+            const token = await SecureStore.getItemAsync("access_token");
+            await fetch(`${API_URL}/tips/viewed/${currentTip.id}`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+        } catch (err) {
+            console.log("Mark tip viewed failed", err);
+        }
+    };
 
     const toggleFavorite = async () => {
         try {
