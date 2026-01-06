@@ -3,10 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, func
 from typing import List
 from pydantic import BaseModel
+
+from .auth import get_current_user
 from ..database.database import get_session
 from ..models.test import Test
 from ..models.test_answer import TestAnswer
 from ..models.test_topics import TestTopic
+from ..models.user import User
+from ..models.user_wrong_answered_tests import UserWrongAnsweredTest
 
 router = APIRouter(prefix="/tests", tags=["Tests"])
 
