@@ -71,8 +71,9 @@ def get_random_tests(
 
 @router.post("/score", response_model=ScoreResponse)
 def score_test(
-    data: List[ScoreRequest],
-    session: Session = Depends(get_session)
+        data: List[ScoreRequest],
+        session: Session = Depends(get_session),
+        user: User = Depends(get_current_user)  # <-- added
 ):
     if not data:
         return ScoreResponse(score=0, total=0, correct=0, wrong_questions=[])
@@ -96,11 +97,36 @@ def score_test(
             correct += 1
         else:
             test = session.get(Test, item.test_id)
-            wrong.append(WrongQuestion(
+            wrong_question = WrongQuestion(
                 content=test.content if test else "Unknown question",
                 selected=[a.content for a in answers if a.id in selected_ids],
                 correct=[a.content for a in answers if a.id in correct_ids]
-            ))
+            )
+            wrong.append(wrong_question)
+
+            # --- Save wrong answer for user ---
+            existing_record = session.exec(
+                select(UserWrongAnsweredTest)
+                .where(UserWrongAnsweredTest.user_id == user.id)
+                .where(UserWrongAnsweredTest.test_id == item.test_id)
+            ).first()
+
+            selected_str = ",".join(map(str, selected_ids))
+            correct_str = ",".join(map(str, correct_ids))
+
+            if existing_record:
+                # Update existing record
+                existing_record.selected_answer_ids = selected_str
+                existing_record.correct_answer_ids = correct_str
+            else:
+                # Create new record
+                session.add(UserWrongAnsweredTest(
+                    user_id=user.id,
+                    test_id=item.test_id,
+                    selected_answer_ids=selected_str,
+                    correct_answer_ids=correct_str
+                ))
+            session.commit()  # commit per question to avoid conflicts
 
     score = round((correct / total * 100), 1) if total > 0 else 0
 

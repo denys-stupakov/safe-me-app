@@ -1,4 +1,3 @@
-// screens/TestTakingScreen.jsx
 import React, { useState } from 'react';
 import {
   View,
