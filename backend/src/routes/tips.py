@@ -12,6 +12,9 @@ from ..models.topic import Topic  # ← NEW: to get topic names
 from ..models.user import User
 from ..models.user_viewed_tips import UserViewedTip
 from ..models.user_favorite_tip import UserFavoriteTip
+from .topic import Topic
+from ..models.tip import Tip
+from ..models.tip_topics import TipTopic
 
 router = APIRouter(prefix="/tips", tags=["Tips"])
 
