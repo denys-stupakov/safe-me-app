@@ -11,29 +11,37 @@ import {
 } from 'react-native';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
-import { format } from 'date-fns';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.84:8000';
 
 export default function PasswordHistoryScreen() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [visiblePasswords, setVisiblePasswords] = useState({}); // Track which passwords are visible
+  const [visiblePasswords, setVisiblePasswords] = useState({});
   
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         const token = await SecureStore.getItemAsync('access_token');
-        if (!token) throw new Error('Not logged in');
+        if (!token) {
+          Alert.alert('Not logged in', 'Please log in to view history');
+          setLoading(false);
+          return;
+        }
         
-        const response = await fetch(`${API_URL}/passwords/history`, {
+        const response = await fetch(`${API_URL}/password/history`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         
-        if (!response.ok) throw new Error('Failed');
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || 'Failed to load');
+        }
+        
         const data = await response.json();
-        // Sort newest first
-        setHistory(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+        // Sort newest first by created_at
+        const sorted = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setHistory(sorted);
       } catch (error) {
         console.error('Error loading password history:', error);
         Alert.alert('Error', 'Could not load password history');
@@ -55,12 +63,24 @@ export default function PasswordHistoryScreen() {
   
   const getStrengthColor = (strength) => {
     switch (strength) {
-      case 'very_strong': return '#34C759';
-      case 'strong': return '#34C759';
-      case 'medium': return '#FF9500';
-      case 'weak': return '#FF3B30';
-      default: return '#8E8E93';
+      case 'very_strong':
+      case 'strong':
+        return '#34C759';
+      case 'medium':
+        return '#FF9500';
+      case 'weak':
+        return '#FF3B30';
+      default:
+        return '#8E8E93';
     }
+  };
+  
+  // Simple date formatting without external libs
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+      ' • ' +
+      date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   };
   
   if (loading) {
@@ -91,11 +111,11 @@ export default function PasswordHistoryScreen() {
         {history.map((item) => (
           <View key={item.id} style={styles.card}>
             <View style={styles.header}>
-              <Text style={styles.date}>
-                {format(new Date(item.created_at), 'MMM d, yyyy • h:mm a')}
-              </Text>
+              <Text style={styles.date}>{formatDate(item.created_at)}</Text>
               <View style={[styles.strengthBadge, { backgroundColor: getStrengthColor(item.strength) }]}>
-                <Text style={styles.strengthText}>{item.strength.replace('_', ' ')}</Text>
+                <Text style={styles.strengthText}>
+                  {item.strength.replace('_', ' ')}
+                </Text>
               </View>
             </View>
             
@@ -170,7 +190,7 @@ const styles = StyleSheet.create({
   },
   password: {
     fontSize: 18,
-    fontFamily: 'Courier New',
+    fontFamily: 'Courier',
     letterSpacing: 2,
     marginBottom: 16,
     color: '#000',

@@ -3,18 +3,19 @@ import sys
 import os
 from datetime import datetime
 
-# Add the project root to Python path so imports work
+# Add project root to path so imports work
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from src.database.database import engine
+from sqlmodel import Session, select, SQLModel
+
+# Import all models to register relationships (this fixes the mapper error)
 from src.models.topic import Topic
 from src.models.test import Test
 from src.models.test_answer import TestAnswer
 from src.models.test_topics import TestTopic
-from sqlmodel import Session, select
 
-# Create tables (just in case)
-from sqlmodel import SQLModel
+# Create tables
 SQLModel.metadata.create_all(engine)
 
 # === INSERT TOPICS ===
@@ -45,63 +46,37 @@ with Session(engine) as session:
             topic_ids[name] = topic.id
             print(f"Added topic: {name} (ID: {topic.id})")
 
-# === INSERT 20 TESTS WITH MULTIPLE CORRECT ANSWERS ===
+# === FULL 20 TESTS WITH MULTIPLE CORRECT ANSWERS ===
 tests_data = [
-    # Password management (2)
-    {
-        "content": "Which are characteristics of a strong password?",
-        "answers": [
-            ("At least 16 characters long", True),
-            ("Includes numbers, symbols, upper and lower case", True),
-            ("Based on personal information like birthdate",False),
-            ("Unique for each account", True)
-        ],
-        "topics": ["Password management"]
-    },
-    {
-        "content": "What are best practices for password management?",
-        "answers": [
-            ("Use a password manager", True),
-            ("Change passwords if compromised", True),
-            ("Reuse the same password everywhere", False),
-            ("Never write them down", False)
-        ],
-        "topics": ["Password management"]
-    },
-    # ... (same 20 tests as before, shortened for space — full list below)
-]
-
-# FULL LIST OF 20 TESTS (copy this full version)
-tests_data = [
-    # 1-2 Password management
+    # Password management
     {"content": "Which are characteristics of a strong password?", "answers": [("At least 16 characters long", True), ("Includes numbers, symbols, upper and lower case", True), ("Based on personal information", False), ("Unique for each account", True)], "topics": ["Password management"]},
     {"content": "What are best practices for password management?", "answers": [("Use a password manager", True), ("Change passwords if compromised", True), ("Reuse passwords", False), ("Enable 2FA", True)], "topics": ["Password management"]},
 
-    # 3-4 Phishing awareness
+    # Phishing awareness
     {"content": "Which are signs of a phishing email?", "answers": [("Urgent language", True), ("Mismatched sender domain", True), ("Spelling errors", True), ("Verified sender", False)], "topics": ["Phishing awareness"]},
     {"content": "How should you respond to phishing?", "answers": [("Report it", True), ("Delete it", True), ("Click links", False), ("Forward to friends", False)], "topics": ["Phishing awareness"]},
 
-    # 5-6 Safe browsing
+    # Safe browsing
     {"content": "What are safe browsing practices?", "answers": [("Use HTTPS", True), ("Update browser", True), ("Click pop-ups", False), ("Avoid public WiFi for banking", True)], "topics": ["Safe browsing"]},
     {"content": "How to handle pop-ups?", "answers": [("Close immediately", True), ("Run antivirus", True), ("Enter info", False), ("Share screenshot", False)], "topics": ["Safe browsing"]},
 
-    # 7-8 2FA
+    # 2FA
     {"content": "Benefits of 2FA?", "answers": [("Extra security layer", True), ("Protects if password stolen", True), ("Slower login", False), ("Can use app or key", True)], "topics": ["2FA"]},
     {"content": "Types of 2FA?", "answers": [("SMS", True), ("Authenticator app", True), ("Second password only", False), ("Hardware token", True)], "topics": ["2FA"]},
 
-    # 9-10 Device Security
+    # Device Security
     {"content": "Best device security practices?", "answers": [("Screen lock", True), ("Antivirus", True), ("Leave unlocked", False), ("Keep updated", True)], "topics": ["Device Security"]},
     {"content": "If device lost?", "answers": [("Remote wipe", True), ("Change passwords", True), ("Wait and see", False), ("Report to police", True)], "topics": ["Device Security"]},
 
-    # 11-12 Email & comms
+    # E-mail & communication security
     {"content": "Secure email practices?", "answers": [("End-to-end encryption", True), ("Verify sender", True), ("Open all attachments", False), ("Avoid public WiFi", True)], "topics": ["E-mail & communication security"]},
     {"content": "Common email threats?", "answers": [("Phishing", True), ("Malware attachments", True), ("Encrypted from known sender", False), ("Spoofed addresses", True)], "topics": ["E-mail & communication security"]},
 
-    # 13-14 Data backup
+    # Data backup
     {"content": "Best backup practices?", "answers": [("Regular schedule", True), ("Multiple locations", True), ("Never test restore", False), ("Encrypt backups", True)], "topics": ["Data backup"]},
     {"content": "Types of backups?", "answers": [("Full", True), ("Incremental", True), ("No backup", False), ("Differential", True)], "topics": ["Data backup"]},
 
-    # 15-20 Multi-topic
+    # Multi-topic tests
     {"content": "Password + 2FA best practices?", "answers": [("Unique passwords", True), ("Enable 2FA", True), ("Share passwords", False), ("Use authenticator apps", True)], "topics": ["Password management", "2FA"]},
     {"content": "Phishing signs in emails?", "answers": [("Unexpected requests", True), ("Poor grammar", True), ("Legitimate logos only", False), ("Suspicious links", True)], "topics": ["Phishing awareness", "E-mail & communication security"]},
     {"content": "Safe browsing on devices?", "answers": [("Use VPN on public WiFi", True), ("Keep OS updated", True), ("Download from unknown sources", False), ("Enable firewall", True)], "topics": ["Safe browsing", "Device Security"]},

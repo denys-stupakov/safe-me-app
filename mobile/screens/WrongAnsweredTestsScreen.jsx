@@ -1,3 +1,4 @@
+// screens/WrongAnsweredTestsScreen.jsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,7 +11,7 @@ import {
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = Constants.expoConfig?.extra?.apiUrl;
+const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.84:8000';
 
 export default function WrongAnsweredTestsScreen() {
   const [wrongQuestions, setWrongQuestions] = useState([]);
@@ -20,15 +21,23 @@ export default function WrongAnsweredTestsScreen() {
     const fetchWrongAnswers = async () => {
       try {
         const token = await SecureStore.getItemAsync('access_token');
-        if (!token) throw new Error('Not logged in');
+        if (!token) {
+          Alert.alert('Not logged in', 'Please log in to view history');
+          setLoading(false);
+          return;
+        }
         
-        const response = await fetch(`${API_URL}/tests/wrong-answers`, {
+        const response = await fetch(`${API_URL}/tests/wrong-history`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         
-        if (!response.ok) throw new Error('Failed');
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || 'Failed to load');
+        }
+        
         const data = await response.json();
-        setWrongQuestions(data.wrong_questions || []);
+        setWrongQuestions(data);
       } catch (error) {
         console.error('Error loading wrong answers:', error);
         Alert.alert('Error', 'Could not load wrong answered tests');
@@ -55,7 +64,7 @@ export default function WrongAnsweredTestsScreen() {
       <View style={styles.container}>
         <Text style={styles.heading}>Wrong Answered Tests</Text>
         <Text style={styles.message}>
-          No wrong answers yet — keep taking tests to improve!
+          No wrong answers yet — keep taking tests to improve your knowledge!
         </Text>
       </View>
     );
@@ -73,6 +82,16 @@ export default function WrongAnsweredTestsScreen() {
         {wrongQuestions.map((q, i) => (
           <View key={i} style={styles.wrongCard}>
             <Text style={styles.question}>{q.content}</Text>
+            
+            {/* Topic tags */}
+            <View style={styles.tagContainer}>
+              {q.topics.map((topic, idx) => (
+                <View key={idx} style={styles.tag}>
+                  <Text style={styles.tagText}>{topic}</Text>
+                </View>
+              ))}
+            </View>
+            
             <Text style={styles.your}>
               You selected: {q.selected.join(', ') || 'Nothing'}
             </Text>
@@ -127,6 +146,23 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#333',
   },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  tag: {
+    backgroundColor: '#e0e0e0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  tagText: {
+    fontSize: 13,
+    color: '#333',
+    fontWeight: '600',
+  },
   your: {
     fontSize: 16,
     color: '#d32f2f',
@@ -147,5 +183,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#666',
     marginTop: 20,
+    lineHeight: 26,
   },
 });
