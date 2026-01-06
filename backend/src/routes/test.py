@@ -11,8 +11,11 @@ from ..models.test_answer import TestAnswer
 from ..models.test_topics import TestTopic
 from ..models.user import User
 from ..models.user_wrong_answered_tests import UserWrongAnsweredTest
+from ..models.topic import Topic
 
 router = APIRouter(prefix="/tests", tags=["Tests"])
+
+# --------------------- Schemas ---------------------
 
 class WrongQuestionWithTopics(BaseModel):
     content: str
@@ -44,11 +47,13 @@ class ScoreResponse(BaseModel):
     correct: int
     wrong_questions: List[WrongQuestion]
 
+# --------------------- Endpoints ---------------------
+
 @router.get("/random", response_model=List[TestRead])
 def get_random_tests(
-    topic_ids: str = None,
-    limit: int = 10,
-    session: Session = Depends(get_session)
+        topic_ids: str = None,
+        limit: int = 10,
+        session: Session = Depends(get_session)
 ):
     query = select(Test)
 
@@ -73,7 +78,7 @@ def get_random_tests(
 def score_test(
         data: List[ScoreRequest],
         session: Session = Depends(get_session),
-        user: User = Depends(get_current_user)  # <-- added
+        user: User = Depends(get_current_user)
 ):
     if not data:
         return ScoreResponse(score=0, total=0, correct=0, wrong_questions=[])
@@ -83,10 +88,10 @@ def score_test(
     wrong = []
 
     for item in data:
+        # Fetch all answers for this test
         answers = session.exec(
             select(TestAnswer).where(TestAnswer.test_id == item.test_id)
         ).all()
-
         if not answers:
             continue
 
@@ -119,14 +124,15 @@ def score_test(
                 existing_record.selected_answer_ids = selected_str
                 existing_record.correct_answer_ids = correct_str
             else:
-                # Create new record
+                # Add new record
                 session.add(UserWrongAnsweredTest(
                     user_id=user.id,
                     test_id=item.test_id,
                     selected_answer_ids=selected_str,
                     correct_answer_ids=correct_str
                 ))
-            session.commit()  # commit per question to avoid conflicts
+
+    session.commit()  # commit all changes once
 
     score = round((correct / total * 100), 1) if total > 0 else 0
 

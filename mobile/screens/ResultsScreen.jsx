@@ -10,7 +10,8 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Constants from 'expo-constants';  // ← This reads app.json extra
+import Constants from 'expo-constants';
+import * as SecureStore from "expo-secure-store";  // ← This reads app.json extra
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -30,9 +31,12 @@ export default function ResultsScreen({ route }) {
       }
       
       try {
+          const token = await SecureStore.getItemAsync("access_token");
+
         const res = await fetch(`${API_URL}/tests/score`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' ,
+              'Authorization': `Bearer ${token}`},
           body: JSON.stringify(responses),
         });
         
