@@ -19,30 +19,25 @@ class TipRead(BaseModel):
     id: int
     title: str
     content: str
-    topics: List[str]  # ← NEW: list of topic names for display
+    topics: List[str]
 
 @router.get("/random", response_model=List[TipRead])
 def get_random_tips(
-        topic_ids: str = None,  # comma-separated topic IDs
+        topic_ids: str = None,
         session: Session = Depends(get_session),
         user: User = Depends(get_current_user)
 ):
-    # 1️⃣ Subquery for tips the user already viewed
     seen_subq = select(UserViewedTip.tip_id).where(UserViewedTip.user_id == user.id)
 
-    # 2️⃣ Base query: tips not viewed
     query = select(Tip).where(Tip.id.not_in(seen_subq))
 
-    # 3️⃣ Filter by topics if provided
     if topic_ids:
         ids = [int(x) for x in topic_ids.split(",") if x.strip()]
         if ids:
             query = query.join(TipTopic).where(TipTopic.topic_id.in_(ids))
 
-    # 4️⃣ Order randomly
     tips = session.exec(query.order_by(func.random())).all()
 
-    # 5️⃣ Include topic names
     result = []
     for tip in tips:
         topic_names = session.exec(
@@ -61,7 +56,7 @@ def get_random_tips(
 
 @router.post("/view/{tip_id}")
 def mark_tip_viewed(tip_id: int, session: Session = Depends(get_session)):
-    user_id = 1  # test user
+    user_id = 1
     existing = session.exec(
         select(UserViewedTip).where(UserViewedTip.user_id == user_id, UserViewedTip.tip_id == tip_id)
     ).first()
@@ -70,6 +65,65 @@ def mark_tip_viewed(tip_id: int, session: Session = Depends(get_session)):
         session.add(viewed)
         session.commit()
     return {"message": "Viewed"}
+
+@router.get("/favorites", response_model=List[TipRead])
+def get_favorite_tips(
+        session: Session = Depends(get_session),
+        user: User = Depends(get_current_user)
+):
+    fav_tip_ids = session.exec(
+        select(UserFavoriteTip.tip_id).where(UserFavoriteTip.user_id == user.id)
+    ).all()
+
+    tips = session.exec(
+        select(Tip).where(Tip.id.in_(fav_tip_ids))
+    ).all()
+
+    result = []
+    for tip in tips:
+        topic_names = session.exec(
+            select(Topic.name)
+            .join(TipTopic)
+            .where(TipTopic.tip_id == tip.id)
+        ).all()
+        result.append(TipRead(
+            id=tip.id,
+            title=tip.title,
+            content=tip.content,
+            topics=topic_names
+        ))
+
+    return result
+
+
+@router.get("/history", response_model=List[TipRead])
+def get_viewed_history(
+        session: Session = Depends(get_session),
+        user: User = Depends(get_current_user)
+):
+    viewed_tip_ids = session.exec(
+        select(UserViewedTip.tip_id).where(UserViewedTip.user_id == user.id)
+    ).all()
+
+    tips = session.exec(
+        select(Tip).where(Tip.id.in_(viewed_tip_ids))
+    ).all()
+
+    result = []
+    for tip in tips:
+        topic_names = session.exec(
+            select(Topic.name)
+            .join(TipTopic)
+            .where(TipTopic.tip_id == tip.id)
+        ).all()
+        result.append(TipRead(
+            id=tip.id,
+            title=tip.title,
+            content=tip.content,
+            topics=topic_names
+        ))
+
+    return result
 
 @router.post("/favorite/{tip_id}")
 def toggle_favorite(

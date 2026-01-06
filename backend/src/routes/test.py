@@ -10,7 +10,12 @@ from ..models.test_topics import TestTopic
 
 router = APIRouter(prefix="/tests", tags=["Tests"])
 
-# Response models (same as before)
+class WrongQuestionWithTopics(BaseModel):
+    content: str
+    selected: List[str]
+    correct: List[str]
+    topics: List[str]
+
 class TestAnswerRead(BaseModel):
     id: int
     content: str
@@ -73,7 +78,6 @@ def score_test(
     wrong = []
 
     for item in data:
-        # Get all answers for this test
         answers = session.exec(
             select(TestAnswer).where(TestAnswer.test_id == item.test_id)
         ).all()
@@ -102,3 +106,40 @@ def score_test(
         correct=correct,
         wrong_questions=wrong
     )
+
+@router.get("/wrong-history", response_model=List[WrongQuestionWithTopics])
+def get_wrong_history(
+        session: Session = Depends(get_session),
+        user: User = Depends(get_current_user)
+):
+    wrong_tests = session.exec(
+        select(UserWrongAnsweredTest).where(UserWrongAnsweredTest.user_id == user.id)
+    ).all()
+
+    result = []
+    for wt in wrong_tests:
+        test = session.get(Test, wt.test_id)
+        if not test:
+            continue
+
+        answers = session.exec(
+            select(TestAnswer).where(TestAnswer.test_id == wt.test_id)
+        ).all()
+
+        selected_ids = {int(x) for x in wt.selected_answer_ids.split(",") if x}
+        correct_ids = {int(x) for x in wt.correct_answer_ids.split(",") if x}
+
+        topic_names = session.exec(
+            select(Topic.name)
+            .join(TestTopic)
+            .where(TestTopic.test_id == wt.test_id)
+        ).all()
+
+        result.append(WrongQuestionWithTopics(
+            content=test.content,
+            selected=[a.content for a in answers if a.id in selected_ids],
+            correct=[a.content for a in answers if a.id in correct_ids],
+            topics=topic_names
+        ))
+
+    return result
