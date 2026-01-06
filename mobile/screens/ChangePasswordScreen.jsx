@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../auth/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import Constants from 'expo-constants';
+import * as SecureStore from "expo-secure-store";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -28,9 +29,11 @@ export default function ChangePasswordScreen() {
     if (error) return Alert.alert('Error', error);
     
     try {
+        const token = await SecureStore.getItemAsync("access_token");
+
       const res = await fetch(`${API_URL}/auth/change-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           email: user.email,
           current_password: currentPassword,
