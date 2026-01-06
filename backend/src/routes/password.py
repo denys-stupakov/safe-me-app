@@ -1,6 +1,5 @@
-# backend/src/routes/password.py
-from fastapi import APIRouter, Depends, HTTPException, Body
-from sqlmodel import Session
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
 from ..database.database import get_session
 from ..models.password_history import PasswordHistory
 import secrets
@@ -10,6 +9,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/password", tags=["Password Generator"])
 
+# --- Existing helpers ---
 def calculate_entropy(charset_size: int, length: int) -> float:
     return round(length * math.log2(charset_size), 2)
 
@@ -20,10 +20,13 @@ def get_charset(exclude_special: bool = False) -> str:
         charset += "!@#$%^&*()_+-=[]{}|;:,.<>?"
     return charset
 
+
 class Password(BaseModel):
     length: int
     exclude_special: bool
 
+
+# --- Existing route ---
 @router.post("/generate")
 def generate_password(
         password: Password,
@@ -31,9 +34,6 @@ def generate_password(
 ):
     length = password.length
     exclude_special = password.exclude_special
-
-    print(length)
-    print(exclude_special)
 
     if not 24 <= length <= 64:
         raise HTTPException(400, "Length must be 16–64")
@@ -43,9 +43,7 @@ def generate_password(
         raise HTTPException(400, f"Minimum length is {min_length} when excluding special chars")
 
     charset = get_charset(exclude_special)
-
-    password = ''.join(secrets.choice(charset) for _ in range(length))
-
+    password_str = ''.join(secrets.choice(charset) for _ in range(length))
     entropy = calculate_entropy(len(charset), length)
 
     if entropy < 150:
@@ -62,7 +60,7 @@ def generate_password(
         strength = "very_strong"
 
     history = PasswordHistory(
-        password=password,
+        password=password_str,
         length=length,
         exclude_special=exclude_special,
         entropy=entropy,
@@ -73,7 +71,7 @@ def generate_password(
     session.refresh(history)
 
     return {
-        "password": password,
+        "password": password_str,
         "length": length,
         "entropy": entropy,
         "strength": strength,
@@ -81,3 +79,18 @@ def generate_password(
         "message": "Secure password generated!",
         "saved_to_history": True
     }
+
+
+# --- NEW: Get password history ---
+class PasswordHistoryRead(BaseModel):
+    id: int
+    password: str
+    length: int
+    exclude_special: bool
+    entropy: float
+    strength: str
+
+@router.get("/history", response_model=list[PasswordHistoryRead])
+def get_password_history(session: Session = Depends(get_session)):
+    history = session.exec(select(PasswordHistory).order_by(PasswordHistory.id.desc())).all()
+    return history
